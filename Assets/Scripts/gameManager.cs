@@ -8,16 +8,18 @@ public class gameManager : MonoBehaviour {
 
     static bool isPlayerDead;
     public GameObject loseScreen;
+    public GameObject winPanel;
     public Score scoreScript;
 
     [Header("DreamLO stuff")]
-    //holds the leaderboard prefab here- from the DreamLO samples
-    dreamloLeaderBoard dlBoard;
     //holds the text containers for score
     public GameObject highScores;
+    //holds the leaderboard prefab here- from the DreamLO samples
+    dreamloLeaderBoard dlBoard;
     Text[] scoreTxts;
-    //max number of high scores to show
-    public int maxToDisplay = 20;
+    //max number of high scores to show must be the same as text fields
+    public int maxToDisplay = 10;
+    public GameObject inputName;
 
     // Use this for initialization
     void Start () {
@@ -26,9 +28,11 @@ public class gameManager : MonoBehaviour {
         
         scoreTxts = highScores.GetComponentsInChildren<Text>();
         highScores.SetActive(false);
+        inputName.SetActive(false);
 
         isPlayerDead = false;
         loseScreen.SetActive(false);
+        winPanel.SetActive(false);
 	}
 	
 	// Update is called once per frame
@@ -36,39 +40,64 @@ public class gameManager : MonoBehaviour {
         if (isPlayerDead)
         {
             loseScreen.SetActive(true);
-            dlBoard.LoadScores();
-            DisplayLeaderBoard();
+            inputName.SetActive(true);
             isPlayerDead = false;
+        }
+        if(Score.score>45)
+        {
+            inputName.SetActive(true);
+            winPanel.SetActive(true);
         }
 	}
 
+    public void UpdateLeaderBoard()
+    {
+        UpdateLeaderBoard(inputName.GetComponent<InputField>().text);
+    }
 
-
+    //Pass the string from an inputfield
     public void UpdateLeaderBoard(string playerName)
     {
         //whenever you want to update the score do the below
         dlBoard.AddScore(playerName, Score.score);
+        inputName.SetActive(false);
+        DisplayLeaderBoard();
     }
 
+    //Called whenever you want to display leaderboard
     public void DisplayLeaderBoard()
     {
+        //Get a list of scores from leaderboard sorted high to low
         List<dreamloLeaderBoard.Score> scoreList = dlBoard.ToListHighToLow();
-        highScores.SetActive(true);
+        //activate the highscore list
+        if (!highScores.activeInHierarchy)
+        {
+            highScores.SetActive(true);
+        }
 
+        //check to make sure there are scores
         if (scoreList.Count == 0)
         {
+            //if not display a loading message and recall the leaderboard
+            //this is to wait for values from server
             scoreTxts[0].text="loading...";
-            DisplayLeaderBoard();
+            StartCoroutine("waitForTime");
         }
         else
         {
-            for(int i=0;i<maxToDisplay;i++)
+            //loop through the score list and update the text fields
+            for(int i=0;i<scoreTxts.Length;i++)
             {
-                Debug.Log(scoreList.Count);
                 if(scoreList.Count>i)
                 scoreTxts[i].text = scoreList[i].playerName + " :"+scoreList[i].score;
             }    
         }
+    }
+
+    IEnumerator waitForTime()
+    {
+        yield return new WaitForSeconds(1);
+        DisplayLeaderBoard();
     }
 
     public static void playerDead()
