@@ -7,6 +7,8 @@ public class Score : MonoBehaviour {
     public static int score;
     public Text scoreTxt;
 
+
+
     public static void updateScore()
     {
         score++;
